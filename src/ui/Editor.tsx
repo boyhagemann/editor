@@ -6,6 +6,8 @@ import Overlay from './Overlay'
 import LocatorUI from './Locator'
 
 
+const calculateLocatorX = (grid: Size, quantize: Size, zoom: Position, offset: Position) => (locator: Locator) => (locator.time * grid.width / quantize.width + offset.x) * zoom.x
+
 interface Props extends Size {
     id: string,
     grid: Size,
@@ -22,6 +24,9 @@ interface Props extends Size {
 }
 
 const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, locators, blocks, bounds, tool, onDown, onUp, onMove }) => {
+
+
+    const calculatePosition = calculateLocatorX(grid, quantize, zoom, offset)
 
     return (
         <g>
@@ -48,7 +53,7 @@ const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, lo
                 offset={offset}
             />
             {locators.map(locator => (
-                <LocatorUI key={locator.id} x={locator.time * grid.width / quantize.width} active={locator.id !== "time"} />
+                <LocatorUI key={locator.id} x={calculatePosition(locator)} active={locator.id !== "time"} />
             ))}
             {blocks}
             {bounds && <Selection {...bounds} />}
