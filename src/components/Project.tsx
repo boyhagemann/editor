@@ -256,7 +256,7 @@ const Project: FC<Props> = () => {
                 split: 20,
                 align: Align.Bottom
             },
-            split: 0.2,
+            split: 0,
             align: Align.Top
         },
         split: 20,
