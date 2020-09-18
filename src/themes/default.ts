@@ -1,4 +1,4 @@
-import Color from 'color'
+import Color from "color"
 
 const palette = {
     canvas: "ghostwhite",
@@ -120,8 +120,8 @@ export default {
     timeline: {
         container: {
             default: {
-                fill: "red",
-                stroke: colors.base.hard1,
+                fill: colors.base.hard1,
+                stroke: colors.base.hard2,
                 cursor: "pointer",
             },
         }

@@ -26,12 +26,8 @@ export default () => {
             <ThemeProvider theme={theme}>
                 <GlobalStyled />
                 <NonScrollable>
-                    <Project width={600} height={400} />
+                    <Project />
                 </NonScrollable>
-                {/* <NonScrollable>
-                    <NoteEditor width={600} height={400} />
-                </NonScrollable> */}
-                {/* <History /> */}
             </ThemeProvider>
         </Provider>
     )

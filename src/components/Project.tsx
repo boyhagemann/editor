@@ -14,13 +14,11 @@ import useScheduler from '../hooks/useScheduler'
 import useSynth from '../hooks/useSynth'
 import context from '../utils/audio'
 import usePersist from '../hooks/usePersist'
-import TrackEditor from './TrackEditor'
 import NoteEditor from './NoteEditor'
 
 
-export interface Props extends Size { }
+export interface Props { }
 
-// const Project: FC<Props> = ({ width, height }) => {
 const Project: FC<Props> = () => {
 
     const [width, height] = useWindowSize();
@@ -34,7 +32,7 @@ const Project: FC<Props> = () => {
     // Persist
     const [initialState, persist] = usePersist("test", defaultState)
 
-    const [tool, setTool] = useState(Tool.Pointer);
+    const [tool, setToolInProject] = useState(Tool.Pointer);
 
     // Locators
     const [locators, dispatchLocatorAction] = useReducer(locatorReducer, initialState.locators);
@@ -58,27 +56,27 @@ const Project: FC<Props> = () => {
 
 
 
-    // const stopPlayingNotes = () => {
-    //     resetSynth();
-    //     clearScheduler()
-    // }
+    const stopPlayingNotes = () => {
+        resetSynth();
+        clear()
+    }
 
 
-    // useEffect(() => {
-    //     stopPlayingNotes()
-    // }, [notes])
+    useEffect(() => {
+        stopPlayingNotes()
+    }, [notes])
 
-    // useEffect(() => {
-    //     if (!playing || startedAt !== playingAt) {
-    //         stopPlayingNotes()
-    //     }
-    // }, [playing, startedAt])
+    useEffect(() => {
+        if (!playing || startedAt !== playingAt) {
+            stopPlayingNotes()
+        }
+    }, [playing, startedAt])
 
-    // useEffect(() => {
-    //     if (!playing) {
-    //         stopPlayingNotes()
-    //     }
-    // }, [playing])
+    useEffect(() => {
+        if (!playing) {
+            stopPlayingNotes()
+        }
+    }, [playing])
 
 
     /**
@@ -199,15 +197,15 @@ const Project: FC<Props> = () => {
      */
     useEffect(() => {
 
-        //     keyboardJS.bind("spacebar", (e) => {
-        //         e?.preventDefault()
-        //         playing ? stop() : play()
-        //     })
+        keyboardJS.bind("spacebar", (e) => {
+            e?.preventDefault()
+            playing ? stop() : play()
+        })
 
-        //     keyboardJS.bind(".", (e) => {
-        //         e?.preventDefault()
-        //         resetTransport()
-        //     })
+        keyboardJS.bind(".", (e) => {
+            e?.preventDefault()
+            resetTransport()
+        })
 
         keyboardJS.bind("/", (e) => {
             e?.preventDefault()
@@ -234,37 +232,14 @@ const Project: FC<Props> = () => {
             setLocator("2", playingAt)
         })
 
-        //     keyboardJS.bind("alt+1", (e) => {
-        //         e?.preventDefault()
-        //         setTool(Tool.Pointer)
-        //     })
-
-        //     keyboardJS.bind("alt+2", (e) => {
-        //         e?.preventDefault()
-        //         setTool(Tool.Pencil)
-        //     })
-
-        //     keyboardJS.bind("alt+3", (e) => {
-        //         e?.preventDefault()
-        //         setTool(Tool.Scissor)
-        //     })
-
-        //     keyboardJS.bind("alt+4", (e) => {
-        //         e?.preventDefault()
-        //         setTool(Tool.Lasso)
-        //     })
-
         return () => {
             keyboardJS.unbind("/")
-            //         keyboardJS.unbind(".")
+            keyboardJS.unbind("spacebar")
+            keyboardJS.unbind(".")
             keyboardJS.unbind("1")
             keyboardJS.unbind("2")
             keyboardJS.unbind("command+1")
             keyboardJS.unbind("command+2")
-            //         keyboardJS.unbind("alt+1")
-            //         keyboardJS.unbind("alt+2")
-            //         keyboardJS.unbind("alt+3")
-            //         keyboardJS.unbind("alt+4")
         }
 
         //     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -275,7 +250,6 @@ const Project: FC<Props> = () => {
     const tree = {
         first: "tools",
         second: {
-            // first: "track-editor",
             second: {
                 first: "note-editor",
                 second: "transport",
@@ -291,16 +265,6 @@ const Project: FC<Props> = () => {
 
 
     const components: Component[] = [
-        {
-            id: "track-editor",
-            render: (size: Size) => (
-                <TrackEditor
-                    {...size}
-                    parts={parts}
-                    tracks={tracks}
-                    onTimeLineChange={handleTimeLineChange}
-                />)
-        },
         {
             id: "note-editor",
             render: (size: Size) => (
@@ -345,13 +309,29 @@ const Project: FC<Props> = () => {
                         "command+right": ({ multiplyZoom }) => multiplyZoom({ x: 1.2, y: 1 }),
                         "command+up": ({ multiplyZoom }) => multiplyZoom({ x: 1, y: 1 / 1.2 }),
                         "command+down": ({ multiplyZoom }) => multiplyZoom({ x: 1, y: 1.2 }),
+                        "alt+1": ({ setTool }) => {
+                            setToolInProject(Tool.Pointer)
+                            setTool(Tool.Pointer)
+                        },
+                        "alt+2": ({ setTool }) => {
+                            setToolInProject(Tool.Pencil)
+                            setTool(Tool.Pencil)
+                        },
+                        "alt+3": ({ setTool }) => {
+                            setToolInProject(Tool.Scissor)
+                            setTool(Tool.Scissor)
+                        },
+                        "alt+4": ({ setTool }) => {
+                            setToolInProject(Tool.Lasso)
+                            setTool(Tool.Lasso)
+                        },
                     }}
                 />)
         },
         {
             id: "tools",
             render: (size: Size) => (
-                <Tools {...size} active={tool} onChange={setTool} />
+                <Tools {...size} active={tool} onChange={setToolInProject} />
             )
         },
         {
