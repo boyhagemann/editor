@@ -291,8 +291,13 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
     useEffect(() => {
 
+        const calculatedPosition = {
+            x: pointerPosition.x - offset.x,
+            y: pointerPosition.y - offset.y
+        }
+
         // Find the element we are pointing on
-        const element = elements.find(element => isInBounds(element)({ ...pointerPosition, width: 0, height: 0 }))
+        const element = elements.find(element => isInBounds(element)({ ...calculatedPosition, width: 0, height: 0 }))
 
         // Set the target
         element
@@ -438,7 +443,18 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
         if (!down && tool === Tool.Pointer && target === Target.Grid && pointerOffset) {
 
-            const bounds = calculateBounds(pointerPosition, pointerOffset);
+
+            const calculatedPosition = {
+                x: (pointerPosition.x - offset.x) / zoom.x,
+                y: (pointerPosition.y - offset.y) / zoom.y
+            }
+
+            const calculatedOffset = {
+                x: (pointerOffset.x - offset.x) / zoom.x,
+                y: (pointerOffset.y - offset.y) / zoom.y
+            }
+
+            const bounds = calculateBounds(calculatedPosition, calculatedOffset);
 
             const selected = bounds
                 ? elements.filter(isInBounds(bounds)).map(element => element.id)
