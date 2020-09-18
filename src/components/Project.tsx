@@ -44,7 +44,7 @@ const Project: FC<Props> = () => {
     const { bpm, playingAt, startedAt, playing, play, stop, cycle, reset: resetTransport, setBpm, setCycleStart, setCycleEnd, setPlayingAt, setStartedAt, toggleCycle } = useTransport(initialState.transport)
 
     // Synth
-    const { addEvents, reset: resetSynth } = useSynth(16, bpm, startedAt);
+    const { addEvents, reset: resetSynth } = useSynth(64, bpm, startedAt);
 
     // Scheduler
     const { clear } = useScheduler({

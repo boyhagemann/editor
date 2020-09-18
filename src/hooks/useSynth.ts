@@ -11,21 +11,26 @@ interface Result {
 
 const buildEngine = (): Engine => {
     const osc = context.createOscillator();
+    const env = context.createGain()
     const amp = context.createGain()
 
     osc.frequency.value = 100;
     osc.start();
 
-    osc.connect(amp);
+    osc.connect(env);
+    env.connect(amp);
     amp.connect(context.destination);
-    amp.gain.value = 0
 
-    return { osc, amp };
+    env.gain.value = 0
+    amp.gain.value = 0.05
+
+    return { osc, env, amp };
 }
 
 interface Engine {
     osc: OscillatorNode,
-    amp: GainNode
+    env: GainNode,
+    amp: GainNode,
 }
 
 interface Carrier {
@@ -33,7 +38,7 @@ interface Carrier {
     index: number
 }
 
-const handleOn = (event: MidiEvent, { osc, amp }: Engine) => {
+const handleOn = (event: MidiEvent, { osc, env }: Engine) => {
 
     const frequency = 440 * Math.pow(2, (event.data[1] - 60) / 12);
     const time = Math.max(event.time, context.currentTime)
@@ -41,18 +46,18 @@ const handleOn = (event: MidiEvent, { osc, amp }: Engine) => {
 
     osc.frequency.setValueAtTime(frequency, time)
 
-    amp.gain.cancelScheduledValues(context.currentTime)
-    amp.gain.setValueCurveAtTime([0, 0.3], time, attack)
+    env.gain.cancelScheduledValues(context.currentTime)
+    env.gain.setValueCurveAtTime([0, 1], time, attack)
 
 }
 
-const handleOff = (event: MidiEvent, { osc, amp }: Engine) => {
+const handleOff = (event: MidiEvent, { osc, env }: Engine) => {
 
     const time = Math.max(event.time, context.currentTime)
     const release = 1
 
-    amp.gain.cancelScheduledValues(context.currentTime)
-    amp.gain.setValueCurveAtTime([amp.gain.value, 0], time, release)
+    env.gain.cancelScheduledValues(context.currentTime)
+    env.gain.setValueCurveAtTime([env.gain.value, 0], time, release)
 
 }
 
