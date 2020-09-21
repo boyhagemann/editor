@@ -1,9 +1,9 @@
 import React, { FC, useState, useReducer, useEffect, } from 'react'
 import { useWindowSize } from '@react-hook/window-size'
 import Compose, { Align, Component } from '../ui/Compose'
-import { Size, Part, Position, ChangeEvent, Change, isElementEvent, Tool, Selection, Mode, Track } from '../types.d'
-import noteReducer, { NoteAction, batch, Add, add, Update, update, Remove, remove, defaultState as defaultNotes, Notes } from '../reducers/notes'
-import locatorReducer, { add as addLocator, defaultState as defaultLocators, Locators, Locator } from '../reducers/locators'
+import { Size, Part, Tool, Mode, Track } from '../types.d'
+import noteReducer, { NoteAction, batch, defaultState as defaultNotes, } from '../reducers/notes'
+import locatorReducer, { add as addLocator, defaultState as defaultLocators, Locator } from '../reducers/locators'
 import { defaultState as defaultTransport } from '../reducers/transport'
 import Tools from '../ui/Tools'
 import useTransport from '../hooks/useTransport'
@@ -281,22 +281,30 @@ const Project: FC<Props> = () => {
                             ({ setMode }) => setMode(Mode.Special),
                             ({ setMode }) => setMode(Mode.Default),
                         ],
-                        left: ({ selection, moveSelection, transposeOffset, grid, quantize }) => selection.length
+                        left: ({ selected, moveSelection, transposeOffset, grid, quantize }) => selected.length
                             ? moveSelection({ x: -1 * grid.width / quantize.width, y: 0 })
                             : transposeOffset({ x: -1 * grid.width / quantize.width, y: 0 }),
-                        right: ({ selection, moveSelection, transposeOffset, grid, quantize }) => selection.length
+                        right: ({ selected, moveSelection, transposeOffset, grid, quantize }) => selected.length
                             ? moveSelection({ x: 1 * grid.width / quantize.width, y: 0 })
                             : transposeOffset({ x: 1 * grid.width / quantize.width, y: 0 }),
-                        up: ({ selection, moveSelection, transposeOffset, grid, quantize }) => selection.length
+                        up: ({ selected, moveSelection, transposeOffset, grid, quantize }) => selected.length
                             ? moveSelection({ x: 0, y: -1 * grid.height / quantize.height })
                             : transposeOffset({ x: 0, y: -1 * grid.height / quantize.height }),
-                        down: ({ selection, moveSelection, transposeOffset, grid, quantize }) => selection.length
+                        down: ({ selected, moveSelection, transposeOffset, grid, quantize }) => selected.length
                             ? moveSelection({ x: 0, y: 1 * grid.height / quantize.height })
                             : transposeOffset({ x: 0, y: 1 * grid.height / quantize.height }),
-                        "shift+left": ({ moveSelection, grid }) => moveSelection({ x: -1 * grid.width, y: 0 }),
-                        "shift+right": ({ moveSelection, grid }) => moveSelection({ x: 1 * grid.width, y: 0 }),
-                        "shift+up": ({ moveSelection, grid }) => moveSelection({ x: 0, y: -1 * grid.height }),
-                        "shift+down": ({ moveSelection, grid }) => moveSelection({ x: 0, y: 1 * grid.height }),
+                        "shift+left": ({ moveSelection, transposeOffset, selected, grid }) => selected.length
+                            ? moveSelection({ x: -1 * grid.width, y: 0 })
+                            : transposeOffset({ x: -1 * grid.width, y: 0 }),
+                        "shift+right": ({ moveSelection, transposeOffset, selected, grid }) => selected.length
+                            ? moveSelection({ x: 1 * grid.width, y: 0 })
+                            : transposeOffset({ x: 1 * grid.width, y: 0 }),
+                        "shift+up": ({ moveSelection, transposeOffset, selected, grid }) => selected.length
+                            ? moveSelection({ x: 0, y: -1 * grid.height })
+                            : transposeOffset({ x: 0, y: -1 * grid.height }),
+                        "shift+down": ({ moveSelection, transposeOffset, selected, grid }) => selected.length
+                            ? moveSelection({ x: 0, y: 1 * grid.height })
+                            : transposeOffset({ x: 0, y: 1 * grid.height }),
                         "command+a": ({ selectAll }) => selectAll(),
                         "command+d": ({ duplicateSelection }) => duplicateSelection(),
                         "backspace": ({ deleteSelection }) => deleteSelection(),

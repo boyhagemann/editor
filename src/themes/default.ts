@@ -49,6 +49,16 @@ const colors: Record<string, ColorVariants> = {
 }
 
 export default {
+    editor: {
+        grid: {
+            small: {
+                color: "lightGrey"
+            },
+            large: {
+                color: "grey"
+            }
+        }
+    },
     element: {
         default: {
             fill: colors.base.default,
@@ -123,6 +133,14 @@ export default {
                 fill: colors.base.hard1,
                 stroke: colors.base.hard2,
                 cursor: "pointer",
+            },
+        },
+        grid: {
+            large: {
+                color: colors.base.soft2,
+            },
+            small: {
+                color: colors.base.soft1,
             },
         }
     },

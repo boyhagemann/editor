@@ -12,7 +12,7 @@ const Grid: FC<Props> = ({ id, x = 0, y = 0, width, height, color, grid, offset 
 
     return (<>
         <defs>
-            <pattern id={id} x={-offset.x} y={-offset.y} width={grid.width} height={grid.height} patternUnits="userSpaceOnUse">
+            <pattern id={id} width={grid.width} height={grid.height} patternUnits="userSpaceOnUse">
                 <path d={`M ${grid.width} 0 L 0 0 0 ${grid.height}`} fill="none" stroke={color} strokeWidth="0.5" />
             </pattern>
         </defs>

@@ -1,6 +1,5 @@
 import React, { FC } from 'react'
 import Keyboard from '../ui/Keyboard'
-// import Editor from './Editor'
 import Compose, { Align, Component } from '../ui/Compose'
 import { Size, ChangeEvent, isElementEvent, Note, Locator } from '../types.d'
 import { NoteAction } from '../reducers/notes'
@@ -25,23 +24,12 @@ export interface Props extends Size {
 
 const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators, playing, playingAt, onTimeLineChange }) => {
 
-
-    /**
-     * 
-     * Helpers
-     * 
-     */
-
-    const isNotePlaying = (id: string) => playing && notes.some(note => note.id === id && note.on < playingAt && note.off > playingAt);
-
-    const getActiveValues = () => playing ? notes
-        .filter(note => note.on < playingAt && note.off > playingAt)
-        .map(note => note.value) : activeKeys
-
     const settings: Settings = {
-        dimensions: {
+        bounds: {
+            x: 0,
+            y: 0,
             width,
-            height: 100 * 128,
+            height: 128 * (100 / 12)
         },
         grid: {
             width: 50,
@@ -62,10 +50,10 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
         snapToGrid: true
     }
 
-    const { grid, quantize, snapToGrid } = settings;
+    const { bounds, grid, quantize, snapToGrid } = settings;
 
     const elements = notes.map(mapNoteToElement(settings));
-    const renderElement = (props: RenderElementProps) => <Element {...props} key={props.id} active={isNotePlaying(props.id)} />
+
     const generateId = () => uuid();
 
     const handleChange = (changes: ChangeEvent[]) => {
@@ -80,10 +68,45 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
     }
 
     // Editor
-    const withEditorProps = useEditor({ elements, renderElement, dimensions: { width, height }, grid, quantize, snapToGrid, generateId, onChange: handleChange, keys });
+    const withEditorProps = useEditor({ elements, bounds, grid, quantize, snapToGrid, generateId, onChange: handleChange, keys });
 
     // Keyboard
-    const { active: activeKeys, add: addKey, remove: removeKey, setPlaying } = useKeyboard();
+    const { active, add, remove, setPlaying } = useKeyboard();
+
+    const { zoom, offset, isSelected, isChanged } = withEditorProps
+
+
+    /**
+     * 
+     * Selectors
+     * 
+     */
+
+    const getActiveValues = () => playing ? notes
+        .filter(note => note.on < playingAt && note.off > playingAt)
+        .map(note => note.value) : active
+
+    const isNotePlaying = (id: string) => playing && notes.some(note => note.id === id && note.on < playingAt && note.off > playingAt);
+
+
+
+    /**
+     * 
+     * Helpers
+     * 
+     */
+    const renderElement = (props: RenderElementProps) => <Element {...props} key={props.id} active={isNotePlaying(props.id)} />
+
+
+    const blocks = withEditorProps.blocks.map(element => renderElement({
+        ...element,
+        x: element.x * zoom.x + offset.x,
+        y: element.y * zoom.y + offset.y,
+        width: element.width * zoom.x,
+        height: element.height * zoom.y,
+        selected: isSelected(element),
+        moving: isChanged(element),
+    }))
 
 
     /**
@@ -94,7 +117,7 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
 
     const handleKeyboardDown = (value: number) => {
         setPlaying(true);
-        addKey(value);
+        add(value);
     }
 
     const handleKeyboardUp = () => {
@@ -102,11 +125,11 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
     }
 
     const handleKeyboardOver = (value: number) => {
-        addKey(value);
+        add(value);
     }
 
     const handleKeyboardOut = (value: number) => {
-        removeKey(value)
+        remove(value)
     }
 
 
@@ -132,10 +155,10 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
             render: (size: Size) => (
                 <Keyboard
                     width={size.width}
-                    keyHeight={settings.grid.height / settings.quantize.height}
+                    keyHeight={settings.grid.height / settings.quantize.height * withEditorProps.zoom.y}
                     keys={128}
                     active={getActiveValues()}
-                    offset={{ x: 0, y: 0 }}
+                    offset={{ x: 0, y: -withEditorProps.offset.y }}
                     onDown={handleKeyboardDown}
                     onUp={handleKeyboardUp}
                     onOver={handleKeyboardOver}
@@ -149,6 +172,7 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
 
                 <Editor
                     {...withEditorProps}
+                    blocks={blocks}
                     id="note-editor"
                     width={width}
                     height={height}
@@ -161,9 +185,12 @@ const NoteEditor: FC<Props> = ({ width, height, notes, keys, onChange, locators,
         },
         {
             id: "timeline",
-            render: (size: Size) => (
-                <TimeLine {...size} {...settings} offset={{ x: 0, y: 0 }} playingAt={playingAt} onDown={onTimeLineChange} />
-            )
+            render: (size: Size) => {
+
+                return (
+                    <TimeLine {...size} {...withEditorProps} playingAt={playingAt} onDown={onTimeLineChange} />
+                )
+            }
         },
     ]
 

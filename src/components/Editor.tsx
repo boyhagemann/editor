@@ -1,15 +1,15 @@
-import React, { FC, ReactElement } from 'react'
+import React, { FC } from 'react'
 import { Size, ChangeEvent, Element } from '../types.d'
-import useEditor, { RenderElementProps, Settings, KeyHandler } from '../hooks/useEditor'
+import useEditor, { Settings, KeyHandler } from '../hooks/useEditor'
 import { Locators } from '../reducers/locators'
 import EditorUI from '../ui/Editor'
+import ElementUI from '../ui/Element'
 
 
 export interface Props extends Settings, Size {
     id: string,
     elements: Element[],
     locators: Locators,
-    renderElement: (props: RenderElementProps) => ReactElement
     onSelect?: (elements: Element[]) => void;
     onChange?: (events: ChangeEvent[]) => void;
     generateId: () => string,
@@ -18,7 +18,6 @@ export interface Props extends Settings, Size {
 
 const Editor: FC<Props> = ({
     id,
-    renderElement,
     elements,
     locators,
     width,
@@ -26,12 +25,17 @@ const Editor: FC<Props> = ({
     onChange,
     generateId,
     keys,
+    bounds,
     grid,
     quantize,
     snapToGrid,
 }) => {
 
-    const withEditorProps = useEditor({ elements, renderElement, dimensions: { width, height }, grid, quantize, snapToGrid, generateId, onChange, keys });
+    const withEditorProps = useEditor({ elements, bounds, grid, quantize, snapToGrid, generateId, onChange, keys });
+
+    const { isSelected, isChanged } = withEditorProps
+
+    const renderElement = (element: Element) => <ElementUI {...element} selected={isSelected(element)} moving={isChanged(element)} />
 
     return <EditorUI
         {...withEditorProps}
@@ -39,8 +43,10 @@ const Editor: FC<Props> = ({
         width={width}
         height={height}
         locators={locators}
+        bounds={bounds}
         grid={grid}
         quantize={quantize}
+        blocks={elements.map(renderElement)}
     />
 }
 

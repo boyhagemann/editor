@@ -6,18 +6,18 @@ import { Settings } from "../hooks/useEditor";
 
 export type Notes = Note[];
 
-export const getUpperBounds = (notes: Notes): Bounds => {
+// export const getUpperBounds = (notes: Notes): Bounds => {
 
-    const x = Math.min(...notes.map(note => note.on))
-    const y = Math.min(...notes.map(note => note.value))
-    const width = Math.max(...notes.map(note => note.off))
-    const height = Math.max(...notes.map(note => note.value + 1))
+//     const x = Math.min(...notes.map(note => note.on))
+//     const y = Math.min(...notes.map(note => note.value))
+//     const width = Math.max(...notes.map(note => note.off))
+//     const height = Math.max(...notes.map(note => note.value + 1))
 
-    return { x, y, width, height }
-}
+//     return { x, y, width, height }
+// }
 
 
-export const mapNoteToElement = ({ grid, quantize, offset, dimensions }: Settings) => (note: Note): Element => {
+export const mapNoteToElement = ({ grid, quantize, offset, bounds }: Settings) => (note: Note): Element => {
 
     const width = grid.width / quantize.width;
     const height = grid.height / quantize.height;
@@ -25,13 +25,13 @@ export const mapNoteToElement = ({ grid, quantize, offset, dimensions }: Setting
     return {
         id: note.id,
         x: snapTo(note.on * width - offset.x, width),
-        y: snapTo((dimensions.height / grid.height - note.value) * height - offset.y, height),
+        y: snapTo((bounds.height - note.value * height) - offset.y, height),
         width: snapTo((note.off - note.on) * width, width),
         height: height
     }
 }
 
-export const mapElementToNote = ({ grid, quantize, offset, dimensions }: Settings) => (element: Element): Note => {
+export const mapElementToNote = ({ grid, quantize, offset, bounds }: Settings) => (element: Element): Note => {
 
     const width = grid.width / quantize.width;
     const height = grid.height / quantize.height;
@@ -40,7 +40,7 @@ export const mapElementToNote = ({ grid, quantize, offset, dimensions }: Setting
         id: element.id,
         on: (element.x + offset.x) / width,
         off: (element.x + element.width + offset.x) / width,
-        value: (dimensions.height / grid.height) - (element.y + offset.y) / height,
+        value: (bounds.height - element.y + offset.y) / height,
         velocity: 127
     }
 }

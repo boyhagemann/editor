@@ -1,4 +1,5 @@
 import React, { FC, ReactElement } from 'react'
+import { useTheme } from 'styled-components'
 import { Size, Position, Locator, Bounds, Tool } from '../types.d'
 import Grid from './Grid'
 import Selection from './Selection'
@@ -10,21 +11,23 @@ const calculateLocatorX = (grid: Size, quantize: Size, zoom: Position, offset: P
 
 interface Props extends Size {
     id: string,
+    bounds: Bounds,
     grid: Size,
     quantize: Size,
     zoom: Position,
     offset: Position,
     locators: Locator[],
     blocks: ReactElement[]
-    bounds?: Bounds,
+    selection?: Bounds,
     tool: Tool,
     onDown?: (position: Position) => void,
     onUp?: (position: Position) => void,
     onMove?: (offset: Position) => void,
 }
 
-const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, locators, blocks, bounds, tool, onDown, onUp, onMove }) => {
+const Editor: FC<Props> = ({ id, width, height, bounds, grid, quantize, zoom, offset, locators, blocks, selection, tool, onDown, onUp, onMove }) => {
 
+    const theme = useTheme() as any;
 
     const calculatePosition = calculateLocatorX(grid, quantize, zoom, offset)
 
@@ -32,9 +35,11 @@ const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, lo
         <g>
             <Grid
                 id={`${id}-small`}
-                color="lightGrey"
-                width={width}
-                height={height}
+                color={theme.editor.grid.small.color}
+                x={offset.x}
+                y={offset.y}
+                width={bounds.width}
+                height={bounds.height}
                 grid={{
                     width: zoom.x * grid.width / quantize.width,
                     height: zoom.y * grid.height / quantize.height
@@ -43,9 +48,9 @@ const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, lo
             />
             <Grid
                 id={`${id}-large`}
-                color="grey"
-                width={width}
-                height={height}
+                color={theme.editor.grid.small.color}
+                width={bounds.width}
+                height={bounds.height}
                 grid={{
                     width: zoom.x * grid.width,
                     height: zoom.y * grid.height
@@ -56,7 +61,7 @@ const Editor: FC<Props> = ({ id, width, height, grid, quantize, zoom, offset, lo
                 <LocatorUI key={locator.id} x={calculatePosition(locator)} active={locator.id !== "time"} />
             ))}
             {blocks}
-            {bounds && <Selection {...bounds} />}
+            {selection && <Selection {...selection} />}
             <Overlay
                 width={width}
                 height={height}

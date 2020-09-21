@@ -136,6 +136,6 @@ export default memo(Overlay, (prev, next) => {
         prev.y === next.y &&
         prev.width === next.width &&
         prev.height === next.height &&
-        prev.tool === next.tool
-
+        prev.tool === next.tool &&
+        prev.onDown === next.onDown
 }) 

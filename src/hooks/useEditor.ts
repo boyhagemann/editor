@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactElement } from "react";
+import { useEffect, useState } from "react";
 import { Position, Bounds, ChangeEvent, Target, isAddEvent, Change, Add, Update, Element, ElementEvent, Selection, isElementEvent, Tool, Mode, Size, Remove } from "../types.d";
 import { calculateBounds, isInBounds, getUpperBounds } from "../utils/selection";
 import { snapTo, floorTo } from "../utils/numbers";
@@ -9,7 +9,7 @@ import keyboardJS from 'keyboardjs'
 
 
 export interface Settings {
-    dimensions: Size,
+    bounds: Bounds,
     grid: Size,
     quantize: Size,
     offset: Position,
@@ -29,9 +29,9 @@ export type KeyHandler = Callback | [Callback, Callback]
 
 interface WithEditor extends Settings {
     changes: ChangeEvent[],
-    bounds?: Bounds,
-    selection: Selection,
-    blocks: ReactElement[]
+    selection?: Bounds,
+    selected: Selection,
+    blocks: Element[],
     tool: Tool,
     mode: Mode,
     selectAll: () => void,
@@ -50,14 +50,13 @@ interface WithEditor extends Settings {
     onDown: (position: Position) => void,
     onUp: (position: Position) => void,
     onMove: (offset: Position) => void,
-    isSelected: (element: Element) => void,
-    isChanged: (element: Element) => void,
+    isSelected: (element: Element) => boolean,
+    isChanged: (element: Element) => boolean,
 }
 
 interface Props {
     elements: Element[],
-    renderElement: (props: RenderElementProps) => ReactElement
-    dimensions: Size,
+    bounds: Bounds,
     grid: Size,
     quantize: Size,
     snapToGrid: boolean,
@@ -66,9 +65,9 @@ interface Props {
     keys?: Record<string, KeyHandler>
 }
 
-export default ({ elements, renderElement, dimensions, grid, quantize, snapToGrid, onChange, generateId, keys }: Props): WithEditor => {
+export default ({ elements, bounds, grid, quantize, snapToGrid, onChange, generateId, keys }: Props): WithEditor => {
 
-    const [selection, select] = useState<Selection>([]);
+    const [selected, select] = useState<Selection>([]);
     const [zoom, setZoom] = useState<Position>({ x: 1, y: 1 })
     const [offset, setOffset] = useState<Position>({ x: 0, y: 0 })
     const [tool, setTool] = useState(Tool.Pointer);
@@ -90,14 +89,33 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
 
     /**
-     * Helpers
+     * Selectors
      */
-    const isSelected = (element: Element) => selection.includes(element.id)
+    const isSelected = (element: Element) => selected.includes(element.id)
 
     const isChanged = (element: Element) => changes
         .filter(isElementEvent)
         .some(change => change.element.id === element.id);
 
+    // Calculate the selection bounds
+    const selection = target === Target.Grid && tool === Tool.Pointer && down && pointerOffset
+        ? calculateBounds(pointerPosition, pointerOffset)
+        : undefined;
+
+    // Merge the original elements with the local changes.
+    const blocks = compose<Element[]>(
+        uniqBy("id"),
+        sortBy(isSelected)
+    )([
+        ...changes
+            .filter(isElementEvent)
+            .map(change => change.element),
+        ...elements
+    ])
+
+    /**
+     * Helpers
+     */
     const selectAll = () => select(elements.map(element => element.id))
 
     const deselectAll = () => select([])
@@ -105,7 +123,7 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
     const moveSelection = (transition: Position) => {
 
         const changes = elements
-            .filter(element => selection.includes(element.id))
+            .filter(element => selected.includes(element.id))
             .map<Update>(element => ({
                 type: Change.Update,
                 element: {
@@ -120,12 +138,12 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
     const duplicateSelection = () => {
 
-        const selected = elements
-            .filter(element => selection.includes(element.id));
+        const selectedElements = elements
+            .filter(element => selected.includes(element.id));
 
-        const bounds = getUpperBounds(selected)
+        const bounds = getUpperBounds(selectedElements)
 
-        const changes = selected.map<Add>(element => ({
+        const changes = selectedElements.map<Add>(element => ({
             type: Change.Add,
             element: {
                 ...element,
@@ -142,7 +160,7 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
     const deleteSelection = () => {
 
         const changes = elements
-            .filter(element => selection.includes(element.id))
+            .filter(element => selected.includes(element.id))
             .map<Remove>(element => ({ type: Change.Remove, element }))
 
         onChange && onChange(changes)
@@ -191,42 +209,19 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
     }
 
 
-
-
-    const bounds = target === Target.Grid && tool === Tool.Pointer && down && pointerOffset
-        ? calculateBounds(pointerPosition, pointerOffset)
-        : undefined;
-
-
-    // Merge the original elements with the local changes.
-    const elementsWithChanges = compose<Element[]>(
-        uniqBy("id"),
-        sortBy(isSelected)
-    )([
-        ...changes
-            .filter(isElementEvent)
-            .map(change => change.element),
-        ...elements
-    ])
-
-    const blocks = elementsWithChanges.map(element => renderElement({
-        ...element,
-        x: element.x * zoom.x + offset.x,
-        y: element.y * zoom.y + offset.y,
-        width: element.width * zoom.x,
-        height: element.height * zoom.y,
-        selected: isSelected(element),
-        moving: isChanged(element),
-    }))
-
+    /**
+     * 
+     * Build the helpers object
+     * 
+     */
     const helpers: WithEditor = {
         grid,
-        dimensions,
+        bounds,
         quantize,
         snapToGrid,
         changes,
+        selected,
         selection,
-        bounds,
         zoom,
         offset,
         blocks,
@@ -266,17 +261,17 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
             Array.isArray(handler)
                 ? keyboardJS.bind(key, (e) => {
                     e?.preventDefault()
+                    setTarget(undefined)
                     handler[0](helpers)
                 }, (e) => {
                     e?.preventDefault()
+                    setTarget(undefined)
                     handler[1](helpers)
                 })
                 : keyboardJS.bind(key, (e) => {
                     e?.preventDefault()
                     handler(helpers)
                 })
-
-
 
         })
 
@@ -286,9 +281,14 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
             })
         }
 
-    }, [keys, selection, zoom, offset])
+    }, [keys, selected, zoom, offset, mode])
 
 
+    /**
+     * 
+     * Change hooks state
+     * 
+     */
     useEffect(() => {
 
         const calculatedPosition = {
@@ -307,13 +307,13 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
         // Select the single element if it is not selected yet
         if (tool === Tool.Pointer && down && element && !isSelected(element)) {
             mode === Mode.Special
-                ? select([...selection, element.id])
+                ? select([...selected, element.id])
                 : select([element.id])
         }
 
         // Select again, if we already have a selection but did not move it.
         if (tool === Tool.Pointer && !down && element && !pointerOffset && mode === Mode.Special) {
-            select([...selection, element.id])
+            select([...selected, element.id])
         }
 
         // Reset the selection if clicked outside and not moved
@@ -343,7 +343,6 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
             const width = grid.width / quantize.width;
             const height = grid.height / quantize.height;
-
 
             setId(id);
 
@@ -433,15 +432,14 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [down, mode])
-
+    }, [down, mode, pointerOffset])
 
     /**
      * 2. When the target changes
      */
     useEffect(() => {
 
-        if (!down && tool === Tool.Pointer && target === Target.Grid && pointerOffset) {
+        if (!down && tool === Tool.Pointer && target === Target.Grid && pointerPosition && pointerOffset) {
 
 
             const calculatedPosition = {
@@ -456,17 +454,20 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
 
             const bounds = calculateBounds(calculatedPosition, calculatedOffset);
 
-            const selected = bounds
+            const selection = bounds
                 ? elements.filter(isInBounds(bounds)).map(element => element.id)
                 : []
 
+
             mode === Mode.Special
-                ? select([...selection, ...selected])
-                : select(selected)
+                ? select([...selected, ...selection])
+                : select(selection)
 
             // Reset the target, we want to verify a new click on the grid.
             // Otherwise hitting the shift key only will cause the select.
             setTarget(undefined)
+
+            setPointerOffset(undefined)
         };
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -478,10 +479,10 @@ export default ({ elements, renderElement, dimensions, grid, quantize, snapToGri
     useEffect(() => {
 
         // Move the selection
-        if (down && tool === Tool.Pointer && target === Target.Element && pointerOffset && selection.length) {
+        if (down && tool === Tool.Pointer && target === Target.Element && pointerOffset && selected.length) {
 
             const changes = elements
-                .filter(element => selection.includes(element.id))
+                .filter(element => selected.includes(element.id))
                 .map<Add | Update>(element => {
 
                     const x = element.x + pointerOffset.x - pointerPosition.x;

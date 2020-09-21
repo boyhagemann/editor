@@ -115,7 +115,7 @@ export const toggleCycle: ActionCreator<ToggleCycle> = () => ({
 
 
 export const defaultState: Transport = {
-    bpm: 120,
+    bpm: 70,
     playing: false,
     recording: false,
     playingAt: 0,
