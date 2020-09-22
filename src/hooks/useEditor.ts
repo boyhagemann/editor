@@ -261,11 +261,9 @@ export default ({ elements, bounds, grid, quantize, snapToGrid, onChange, genera
             Array.isArray(handler)
                 ? keyboardJS.bind(key, (e) => {
                     e?.preventDefault()
-                    setTarget(undefined)
                     handler[0](helpers)
                 }, (e) => {
                     e?.preventDefault()
-                    setTarget(undefined)
                     handler[1](helpers)
                 })
                 : keyboardJS.bind(key, (e) => {
@@ -283,6 +281,14 @@ export default ({ elements, bounds, grid, quantize, snapToGrid, onChange, genera
 
     }, [keys, selected, zoom, offset, mode])
 
+    /**
+     * 
+     * Reset the target every time the mode changes.
+     * 
+     */
+    useEffect(() => {
+        setTarget(undefined)
+    }, [mode])
 
     /**
      * 
@@ -292,17 +298,20 @@ export default ({ elements, bounds, grid, quantize, snapToGrid, onChange, genera
     useEffect(() => {
 
         const calculatedPosition = {
-            x: pointerPosition.x - offset.x,
-            y: pointerPosition.y - offset.y
+            x: (pointerPosition.x - offset.x) / zoom.x,
+            y: (pointerPosition.y - offset.y) / zoom.y
         }
+
 
         // Find the element we are pointing on
         const element = elements.find(element => isInBounds(element)({ ...calculatedPosition, width: 0, height: 0 }))
 
-        // Set the target
-        element
-            ? setTarget(Target.Element)
-            : setTarget(Target.Grid)
+        // Set the target, only when pointer is down.
+        if (down) {
+            element
+                ? setTarget(Target.Element)
+                : setTarget(Target.Grid)
+        }
 
         // Select the single element if it is not selected yet
         if (tool === Tool.Pointer && down && element && !isSelected(element)) {
@@ -458,16 +467,9 @@ export default ({ elements, bounds, grid, quantize, snapToGrid, onChange, genera
                 ? elements.filter(isInBounds(bounds)).map(element => element.id)
                 : []
 
-
             mode === Mode.Special
                 ? select([...selected, ...selection])
                 : select(selection)
-
-            // Reset the target, we want to verify a new click on the grid.
-            // Otherwise hitting the shift key only will cause the select.
-            setTarget(undefined)
-
-            setPointerOffset(undefined)
         };
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
