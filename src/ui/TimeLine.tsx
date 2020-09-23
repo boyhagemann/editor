@@ -85,7 +85,7 @@ const TimeLine: FC<Props> = ({ width, height, grid, quantize, snapToGrid, zoom, 
         <Grid id="timeline-large" color={theme.timeline.grid.large.color} width={width} height={height} grid={gridLarge} offset={offset} />
         <Grid id="timeline-small" color={theme.timeline.grid.small.color} width={width} height={height} grid={gridSmall} offset={offset} />
         {numbers.map(({ bar, division }, index) => (
-            <StyledText faded={division !== 0} x={calculateX(index) + 2} y={height - 2}>{bar + 1}.{division}</StyledText>
+            <StyledText faded={division !== 0} x={calculateX(index) + 2} y={height - 2}>{division === 0 ? bar : `.${division + 1}`}</StyledText>
         ))}
         <Overlay tool={Tool.Pointer} width={width} height={height} onDown={handleDown} />
     </g>
