@@ -135,6 +135,17 @@ export default {
                 cursor: "pointer",
             },
         },
+        text: {
+            default: {
+                fill: colors.base.soft2,
+                textAnchor: 'start',
+                fontSize: 12,
+            },
+            faded: {
+                fill: colors.base.soft1,
+                fontSize: 8
+            },
+        },
         grid: {
             large: {
                 color: colors.base.soft2,

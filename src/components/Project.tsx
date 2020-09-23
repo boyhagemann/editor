@@ -202,6 +202,11 @@ const Project: FC<Props> = () => {
             playing ? stop() : play()
         })
 
+        keyboardJS.bind("enter", (e) => {
+            e?.preventDefault()
+            playing ? stop() : play()
+        })
+
         keyboardJS.bind(".", (e) => {
             e?.preventDefault()
             resetTransport()
@@ -235,6 +240,7 @@ const Project: FC<Props> = () => {
         return () => {
             keyboardJS.unbind("/")
             keyboardJS.unbind("spacebar")
+            keyboardJS.unbind("enter")
             keyboardJS.unbind(".")
             keyboardJS.unbind("1")
             keyboardJS.unbind("2")
@@ -317,6 +323,8 @@ const Project: FC<Props> = () => {
                         "command+right": ({ multiplyZoom }) => multiplyZoom({ x: 1.2, y: 1 }),
                         "command+up": ({ multiplyZoom }) => multiplyZoom({ x: 1, y: 1 / 1.2 }),
                         "command+down": ({ multiplyZoom }) => multiplyZoom({ x: 1, y: 1.2 }),
+                        "g": ({ multiplyZoom }) => multiplyZoom({ x: 1 / 1.2, y: 1 }),
+                        "h": ({ multiplyZoom }) => multiplyZoom({ x: 1.2, y: 1 }),
                         "alt+1": ({ setTool }) => {
                             setToolInProject(Tool.Pointer)
                             setTool(Tool.Pointer)
